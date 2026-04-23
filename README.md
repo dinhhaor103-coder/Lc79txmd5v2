@@ -1,6 +1,7 @@
 # TOOL VIP VI LONG - SUPER AI LC79 V9.3
 
 ## Changelog v9.3 (đã fix)
+- **server.js — LỖI NGHIÊM TRỌNG**: parser API đọc sai field name. Tele68 trả `dices: [d1,d2,d3]` và `point` (tổng), nhưng code cũ đọc `dice1/dice2/dice3` (không tồn tại) → `sum` luôn = 0 → rơi vào fallback dùng **tổng giả** (14 cho mọi phiên Tài, 7 cho mọi phiên Xỉu). Hậu quả: tất cả logic phân tích tổng thật + xúc xắc thật (L3, L5, L8, L14, L15, L16, L17, L18, L23) đều chạy trên dữ liệu rác. **Đã sửa: dùng đúng `x.dices[]` và `x.point`.**
 - **prediction.js**:
   - Thêm `timestamp` vào history → `predictLogic19` hoạt động đúng (trước đây luôn `null`).
   - Sửa `predictLogic22` bỏ tham số thừa `cauLogData`.

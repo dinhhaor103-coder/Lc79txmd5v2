@@ -153,10 +153,18 @@ async function updateGame(gid) {
     const newDice = [];
     for (let i = 0; i < cap; i++) {
         const x = list[i];
-        const d1 = x.dice1 || x.d1 || 0;
-        const d2 = x.dice2 || x.d2 || 0;
-        const d3 = x.dice3 || x.d3 || 0;
-        let sum = d1 + d2 + d3;
+        // SỬA QUAN TRỌNG: Tele68 trả `dices: [d1,d2,d3]` và `point` (TỔNG),
+        // KHÔNG phải dice1/dice2/dice3. Code cũ luôn ra sum=0 → fallback dùng tổng giả
+        // (14 cho Tài, 7 cho Xỉu) → toàn bộ logic phân tích tổng/xúc xắc chạy sai.
+        let d1 = 0, d2 = 0, d3 = 0;
+        if (Array.isArray(x.dices) && x.dices.length >= 3) {
+            d1 = x.dices[0] | 0; d2 = x.dices[1] | 0; d3 = x.dices[2] | 0;
+        } else {
+            d1 = x.dice1 || x.d1 || 0;
+            d2 = x.dice2 || x.d2 || 0;
+            d3 = x.dice3 || x.d3 || 0;
+        }
+        let sum = (typeof x.point === 'number') ? x.point : (d1 + d2 + d3);
         let bin;
         if (sum === 0 && (x.resultTruyenThong || x.result)) {
             const r = (x.resultTruyenThong || x.result || '').toString().toUpperCase();
