@@ -1,4 +1,18 @@
-# TOOL VIP VI LONG - SUPER AI LC79 V9.2
+# TOOL VIP VI LONG - SUPER AI LC79 V9.3
+
+## Changelog v9.3 (đã fix)
+- **prediction.js**:
+  - Thêm `timestamp` vào history → `predictLogic19` hoạt động đúng (trước đây luôn `null`).
+  - Sửa `predictLogic22` bỏ tham số thừa `cauLogData`.
+  - Viết lại `analyzePatterns` (trước là stub) — giờ thực sự dùng `PATTERN_DATA`.
+  - Mở rộng `ensembleVote` từ 9 → **24 logic** (nhóm phụ trọng số 0.5) + bonus pattern matcher.
+- **server.js**:
+  - Persist thêm `logicPerformance` (accuracy không reset sau restart).
+  - `fetchGameData` log lỗi khi token Tele68 chết / API 4xx-5xx.
+  - Tracking `FETCH_STATUS` per game; `/health` báo `503 degraded` khi fail ≥ 10 lần.
+  - Hỗ trợ env `LC79_HU_API`, `LC79_MD5_API` để đổi token không cần sửa code.
+  - Hỗ trợ env `DATA_DIR` để trỏ persistence vào Railway volume mount.
+
 
 Backend dự đoán Tài Xỉu LC79 (lc79_hu & lc79_md5) — chạy trên Node.js + Express, sẵn sàng deploy lên Railway.
 

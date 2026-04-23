@@ -1,7 +1,7 @@
 {
   "name": "lc79-vilong-ai",
-  "version": "9.2.0",
-  "description": "TOOL VIP VI LONG - SUPER AI LC79 V9.2 - Backend dự đoán Tài Xỉu",
+  "version": "9.3.0",
+  "description": "TOOL VIP VI LONG - SUPER AI LC79 V9.3 - Backend dự đoán Tài Xỉu (đã fix lỗi)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

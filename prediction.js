@@ -505,7 +505,7 @@ function predictLogic21(history) {
     return null;
 }
 
-function predictLogic22(history, cauLogData) {
+function predictLogic22(history) {
     if (history.length < 15) return null;
     const resultsOnly = history.map(s => s.result === 'Tài' ? 'T' : 'X');
     let taiVotes = 0, xiuVotes = 0, totalContributionWeight = 0;
@@ -603,8 +603,22 @@ const PATTERN_DATA = {
     "xxxxxx": { tai: 8, xiu: 92 }
 };
 
+// SỬA: hàm cũ chỉ là stub — viết lại để thực sự dùng PATTERN_DATA
 function analyzePatterns(history) {
-    return [null, "ĐANG PHÂN TÍCH"];
+    if (!history || history.length < 3) return [null, "DỮ LIỆU CHƯA ĐỦ"];
+    const lastResults = history.map(s => (s.result || s) === "Tài" ? "t" : "x");
+    for (const len of [6, 5, 4, 3]) {
+        if (lastResults.length >= len) {
+            const seq = lastResults.slice(0, len).reverse().join("");
+            if (PATTERN_DATA[seq]) {
+                const p = PATTERN_DATA[seq];
+                if (p.tai > p.xiu + 15) return ["Tài", `Khớp pattern ${seq.toUpperCase()} (T:${p.tai}%)`];
+                if (p.xiu > p.tai + 15) return ["Xỉu", `Khớp pattern ${seq.toUpperCase()} (X:${p.xiu}%)`];
+                return [null, `Pattern ${seq.toUpperCase()} cân bằng`];
+            }
+        }
+    }
+    return [null, "KHÔNG KHỚP PATTERN NÀO"];
 }
 
 function predictLogic24(history) {
@@ -651,21 +665,40 @@ function logic26(arr) {
     return null;
 }
 
-// ==================== ENSEMBLE VOTE (KHỚP 100% userscript gốc) ====================
-// Gốc chỉ gọi 9 logic: L1, L3, L4, L7, L9, L11, L21, L25, L26 — mỗi vote = 1 (không trọng số)
+// ==================== ENSEMBLE VOTE V9.3 (MỞ RỘNG) ====================
+// Gốc chỉ chạy 9 logic. SỬA: kích hoạt thêm L2, L5, L6, L8, L10, L12, L13, L14,
+// L15, L16, L17, L18, L19, L22, L23, L24 với trọng số nhỏ hơn (để không lấn át nhóm chính).
 function ensembleVote(history, lastSession, nextSessionId) {
     const votes = { tai: 0, xiu: 0, details: {} };
-    const tally = (name, r) => {
-        if (r === 'Tài') { votes.tai++; votes.details[name] = 'Tài'; }
-        else if (r === 'Xỉu') { votes.xiu++; votes.details[name] = 'Xỉu'; }
+    const tally = (name, r, w = 1) => {
+        if (r === 'Tài') { votes.tai += w; votes.details[name] = 'Tài'; }
+        else if (r === 'Xỉu') { votes.xiu += w; votes.details[name] = 'Xỉu'; }
     };
-    try { tally('logic1', predictLogic1(lastSession, history)); } catch (e) {}
-    try { tally('logic3', predictLogic3(history)); } catch (e) {}
-    try { tally('logic4', predictLogic4(history)); } catch (e) {}
-    try { tally('logic7', predictLogic7(history)); } catch (e) {}
-    try { tally('logic9', predictLogic9(history)); } catch (e) {}
-    try { tally('logic11', predictLogic11(history)); } catch (e) {}
-    try { tally('logic21', predictLogic21(history)); } catch (e) {}
+    // Nhóm chính (giữ nguyên trọng số 1)
+    try { tally('logic1', predictLogic1(lastSession, history), 1); } catch (e) {}
+    try { tally('logic3', predictLogic3(history), 1); } catch (e) {}
+    try { tally('logic4', predictLogic4(history), 1); } catch (e) {}
+    try { tally('logic7', predictLogic7(history), 1); } catch (e) {}
+    try { tally('logic9', predictLogic9(history), 1); } catch (e) {}
+    try { tally('logic11', predictLogic11(history), 1); } catch (e) {}
+    try { tally('logic21', predictLogic21(history), 1); } catch (e) {}
+    // Nhóm phụ (trọng số 0.5 — tham gia nhưng không lấn át)
+    try { tally('logic2', predictLogic2(nextSessionId, history), 0.5); } catch (e) {}
+    try { tally('logic5', predictLogic5(history), 0.5); } catch (e) {}
+    try { tally('logic6', predictLogic6(lastSession, history), 0.5); } catch (e) {}
+    try { tally('logic8', predictLogic8(history), 0.5); } catch (e) {}
+    try { tally('logic10', predictLogic10(history), 0.5); } catch (e) {}
+    try { tally('logic12', predictLogic12(lastSession, history), 0.5); } catch (e) {}
+    try { tally('logic13', predictLogic13(history), 0.5); } catch (e) {}
+    try { tally('logic14', predictLogic14(history), 0.5); } catch (e) {}
+    try { tally('logic15', predictLogic15(history), 0.5); } catch (e) {}
+    try { tally('logic16', predictLogic16(history), 0.5); } catch (e) {}
+    try { tally('logic17', predictLogic17(history), 0.5); } catch (e) {}
+    try { tally('logic18', predictLogic18(history), 0.5); } catch (e) {}
+    try { tally('logic19', predictLogic19(history), 0.5); } catch (e) {}
+    try { tally('logic22', predictLogic22(history), 0.5); } catch (e) {}
+    try { tally('logic23', predictLogic23(history), 0.5); } catch (e) {}
+    try { tally('logic24', predictLogic24(history), 0.5); } catch (e) {}
     // SỬA: chuyển sang chuỗi T/X cho logic25/26
     const binStr = history.map(s => s.result === 'Tài' ? 'T' : 'X');
     try {
@@ -677,6 +710,12 @@ function ensembleVote(history, lastSession, nextSessionId) {
         const p26 = logic26(binStr);
         if (p26 === 'T') { votes.tai++; votes.details.logic26 = 'Tài'; }
         else if (p26 === 'X') { votes.xiu++; votes.details.logic26 = 'Xỉu'; }
+    } catch (e) {}
+    // BONUS: pattern matcher đã sửa
+    try {
+        const [pat] = analyzePatterns(history);
+        if (pat === 'Tài') { votes.tai += 0.7; votes.details.pattern = 'Tài'; }
+        else if (pat === 'Xỉu') { votes.xiu += 0.7; votes.details.pattern = 'Xỉu'; }
     } catch (e) {}
     return votes;
 }
@@ -831,14 +870,15 @@ function deepAnalysis(gameId, S) {
     // → các logic L1, L5, L6, L8, L12, L22 phân tích đúng tổng/sid thay vì giá trị giả
     const historyObjs = h.map((r, idx) => {
         const t = (S.totals && S.totals[idx]) ? S.totals[idx] : (r === 1 ? 14 : 7);
-        const d = (S.diceData && S.diceData[idx]) ? S.diceData[idx] : { d1: 3, d2: 3, d3: 1, sid: 0 };
+        const d = (S.diceData && S.diceData[idx]) ? S.diceData[idx] : { d1: 3, d2: 3, d3: 1, sid: 0, ts: Date.now() - idx * 30000 };
         return {
             result: r === 1 ? "Tài" : "Xỉu",
             total: t,
             sid: d.sid || ((S.lastPhien || 0) - idx),
             d1: d.d1 || Math.floor(t / 3),
             d2: d.d2 || Math.floor(t / 3),
-            d3: d.d3 || Math.max(1, t - 2 * Math.floor(t / 3))
+            d3: d.d3 || Math.max(1, t - 2 * Math.floor(t / 3)),
+            timestamp: d.ts || (Date.now() - idx * 30000)
         };
     });
 

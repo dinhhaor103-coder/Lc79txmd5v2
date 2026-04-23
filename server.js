@@ -11,16 +11,26 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ==================== CẤU HÌNH GAME ====================
+// SỬA: cho phép override token qua biến môi trường (LC79_HU_API, LC79_MD5_API)
+// để khi Tele68 đổi token chỉ cần update env trên Railway, không phải sửa code.
 const GAMES = {
     lc79_hu: {
         name: 'TAI XIU HU',
-        api: 'https://wtx.tele68.com/v1/tx/lite-sessions?cp=R&cl=R&pf=web&at=83991213bfd4c554dc94bcd98979bdc5'
+        api: process.env.LC79_HU_API ||
+            'https://wtx.tele68.com/v1/tx/lite-sessions?cp=R&cl=R&pf=web&at=83991213bfd4c554dc94bcd98979bdc5'
     },
     lc79_md5: {
         name: 'TAI XIU MD5',
-        api: 'https://wtxmd52.tele68.com/v1/txmd5/lite-sessions?cp=R&cl=R&pf=web&at=3959701241b686f12e01bfe9c3a319b8'
+        api: process.env.LC79_MD5_API ||
+            'https://wtxmd52.tele68.com/v1/txmd5/lite-sessions?cp=R&cl=R&pf=web&at=3959701241b686f12e01bfe9c3a319b8'
     }
 };
+
+// SỬA: theo dõi tình trạng fetch để log/health phản ánh đúng
+const FETCH_STATUS = {};
+for (const gid of Object.keys(GAMES)) {
+    FETCH_STATUS[gid] = { lastOk: 0, lastErr: '', consecFail: 0 };
+}
 
 // ==================== STATE PER GAME ====================
 const STATE = {};
@@ -46,10 +56,13 @@ for (const gid of Object.keys(GAMES)) {
 }
 
 // ==================== PERSISTENCE (lưu lại sau restart) ====================
-const DATA_FILE = path.join(__dirname, 'data.json');
+// SỬA: cho phép set DATA_DIR (vd: Railway volume mount) để dữ liệu sống qua restart.
+// Nếu không set, fallback về thư mục project (sẽ mất khi redeploy trên Railway).
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+const DATA_FILE = path.join(DATA_DIR, 'data.json');
 function saveState() {
     try {
-        const dump = {};
+        const dump = { logicPerformance };
         for (const gid of Object.keys(STATE)) {
             const S = STATE[gid];
             dump[gid] = {
@@ -58,7 +71,7 @@ function saveState() {
             };
         }
         fs.writeFileSync(DATA_FILE, JSON.stringify(dump));
-    } catch (e) { /* ignore */ }
+    } catch (e) { console.log('[STATE] Save failed:', e.message); }
 }
 function loadState() {
     try {
@@ -70,6 +83,12 @@ function loadState() {
                 STATE[gid].predLog = dump[gid].predLog || [];
             }
         }
+        // SỬA: khôi phục logicPerformance để accuracy không bị reset
+        if (dump.logicPerformance) {
+            for (const k of Object.keys(dump.logicPerformance)) {
+                if (logicPerformance[k]) Object.assign(logicPerformance[k], dump.logicPerformance[k]);
+            }
+        }
         console.log('[STATE] Loaded persisted data');
     } catch (e) { console.log('[STATE] Load failed:', e.message); }
 }
@@ -79,17 +98,44 @@ setInterval(saveState, 30000);
 // ==================== FETCH DATA TỪ API GỐC ====================
 async function fetchGameData(gid) {
     const g = GAMES[gid];
+    const status = FETCH_STATUS[gid];
     try {
         const res = await fetch(g.api, {
             signal: AbortSignal.timeout(8000),
             headers: { 'User-Agent': 'Mozilla/5.0' }
         });
-        if (!res.ok) return null;
+        if (!res.ok) {
+            status.consecFail++;
+            status.lastErr = `HTTP ${res.status}`;
+            // SỬA: log mỗi 10 lần fail liên tiếp để biết khi token chết
+            if (status.consecFail % 10 === 1) {
+                console.warn(`[${gid}] fetch fail (${status.consecFail}x): HTTP ${res.status}`);
+            }
+            return null;
+        }
         const data = await res.json();
         const list = data.list || data.data || (Array.isArray(data) ? data : []);
-        if (!list || list.length === 0) return null;
+        if (!list || list.length === 0) {
+            status.consecFail++;
+            status.lastErr = 'empty list';
+            if (status.consecFail % 10 === 1) {
+                console.warn(`[${gid}] fetch ok nhưng list rỗng (${status.consecFail}x)`);
+            }
+            return null;
+        }
+        if (status.consecFail > 0) {
+            console.log(`[${gid}] fetch hồi phục sau ${status.consecFail} lần fail`);
+        }
+        status.lastOk = Date.now();
+        status.lastErr = '';
+        status.consecFail = 0;
         return list;
     } catch (e) {
+        status.consecFail++;
+        status.lastErr = e.message || String(e);
+        if (status.consecFail % 10 === 1) {
+            console.warn(`[${gid}] fetch exception (${status.consecFail}x): ${status.lastErr}`);
+        }
         return null;
     }
 }
@@ -275,7 +321,26 @@ app.get('/performance', (req, res) => {
     res.json(out);
 });
 
-app.get('/health', (req, res) => res.json({ status: 'ok', uptime: process.uptime(), games: Object.keys(GAMES) }));
+app.get('/health', (req, res) => {
+    // SỬA: report tình trạng fetch để biết khi backend mất kết nối Tele68
+    const fetchInfo = {};
+    for (const gid of Object.keys(FETCH_STATUS)) {
+        const s = FETCH_STATUS[gid];
+        fetchInfo[gid] = {
+            lastOkAgoSec: s.lastOk ? Math.round((Date.now() - s.lastOk) / 1000) : null,
+            consecFail: s.consecFail,
+            lastErr: s.lastErr || null,
+            historyLen: STATE[gid].history.length
+        };
+    }
+    const anyDown = Object.values(FETCH_STATUS).some(s => s.consecFail >= 10);
+    res.status(anyDown ? 503 : 200).json({
+        status: anyDown ? 'degraded' : 'ok',
+        uptime: process.uptime(),
+        games: Object.keys(GAMES),
+        fetch: fetchInfo
+    });
+});
 
 app.get('/', (req, res, next) => {
     if (fs.existsSync(path.join(__dirname, 'public', 'index.html'))) return next();
