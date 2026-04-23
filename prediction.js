@@ -198,47 +198,15 @@ function predictLogic7(history) {
     return null;
 }
 
+// [REMOVED v9.4] predictLogic8: contrarian — tổng cao+xu hướng tăng trả "Xỉu" và ngược lại.
+// → Đảo ngược chiều xu hướng, đã vô hiệu hoá theo yêu cầu KHÔNG ĐẢO.
 function predictLogic8(history) {
-    if (history.length < 31) return null;
-    const longTermTotals = history.slice(1, 31).map(s => s.total);
-    const dynamicDeviationThreshold = Math.max(1.5, 0.8 * calculateStdDev(longTermTotals));
-    const last5Totals = history.slice(0, Math.min(5, history.length)).map(s => s.total);
-    let isLast5Rising = false, isLast5Falling = false;
-    if (last5Totals.length >= 2) {
-        isLast5Rising = true; isLast5Falling = true;
-        for (let i = 0; i < last5Totals.length - 1; i++) {
-            if (last5Totals[i] <= last5Totals[i + 1]) isLast5Rising = false;
-            if (last5Totals[i] >= last5Totals[i + 1]) isLast5Falling = false;
-        }
-    }
-    const avg = longTermTotals.reduce((a, b) => a + b, 0) / 30;
-    if (history[0].total > avg + dynamicDeviationThreshold && isLast5Rising) return "Xỉu";
-    if (history[0].total < avg - dynamicDeviationThreshold && isLast5Falling) return "Tài";
     return null;
 }
 
+// [REMOVED v9.4] predictLogic9: thuật toán bẻ bệt khi reversal > continuation
+// → luôn trả kết quả ngược với h[0] nên đã vô hiệu hoá theo yêu cầu KHÔNG ĐẢO.
 function predictLogic9(history) {
-    if (history.length < 20) return null;
-    let maxTai = 0, maxXiu = 0, cTai = 0, cXiu = 0;
-    for (const s of history.slice(0, Math.min(history.length, 120))) {
-        if (s.result === "Tài") { cTai++; cXiu = 0; } else { cXiu++; cTai = 0; }
-        maxTai = Math.max(maxTai, cTai); maxXiu = Math.max(maxXiu, cXiu);
-    }
-    let currentConsecutiveCount = 0;
-    for (let i = 0; i < history.length; i++) {
-        if (history[i].result === history[0].result) currentConsecutiveCount++; else break;
-    }
-    if (currentConsecutiveCount >= Math.max(4, Math.floor(Math.max(maxTai, maxXiu) * 0.5)) && currentConsecutiveCount >= 3) {
-        let totalReversals = 0, totalContinuations = 0;
-        for (let i = currentConsecutiveCount; i < history.length - currentConsecutiveCount; i++) {
-            if (history.slice(i, i + currentConsecutiveCount).every(s => s.result === history[0].result)) {
-                if (history[i - 1] && history[i - 1].result !== history[0].result) totalReversals++;
-                else if (history[i - 1] && history[i - 1].result === history[0].result) totalContinuations++;
-            }
-        }
-        if (totalReversals + totalContinuations > 3 && totalReversals > totalContinuations * 1.3)
-            return history[0].result === "Tài" ? "Xỉu" : "Tài";
-    }
     return null;
 }
 
@@ -253,43 +221,11 @@ function predictLogic10(history) {
     return null;
 }
 
+// [REMOVED v9.4] predictLogic11: bảng `reversalPatterns` — TẤT CẢ entry trong bảng đều
+// có `predict` là kết quả ĐẢO của phần tử cuối pattern. Toàn bộ logic này hoạt động
+// theo nguyên lý đảo ngược, đã vô hiệu hoá theo yêu cầu KHÔNG ĐẢO.
 function predictLogic11(history) {
-    if (history.length < 15) return null;
-    const reversalPatterns = [
-        { pattern: "TàiXỉuTài", predict: "Xỉu", minOccurrences: 3, weight: 1.5 },
-        { pattern: "XỉuTàiXỉu", predict: "Tài", minOccurrences: 3, weight: 1.5 },
-        { pattern: "TàiTàiXỉu", predict: "Tài", minOccurrences: 4, weight: 1.3 },
-        { pattern: "XỉuXỉuTài", predict: "Xỉu", minOccurrences: 4, weight: 1.3 },
-        { pattern: "TàiXỉuXỉu", predict: "Tài", minOccurrences: 3, weight: 1.4 },
-        { pattern: "XỉuTàiTài", predict: "Xỉu", minOccurrences: 3, weight: 1.4 },
-        { pattern: "XỉuTàiTàiXỉu", predict: "Xỉu", minOccurrences: 2, weight: 1.6 },
-        { pattern: "TàiXỉuXỉuTài", predict: "Tài", minOccurrences: 2, weight: 1.6 },
-        { pattern: "TàiXỉuTàiXỉu", predict: "Tài", minOccurrences: 2, weight: 1.4 },
-        { pattern: "XỉuTàiXỉuTài", predict: "Xỉu", minOccurrences: 2, weight: 1.4 },
-        { pattern: "TàiXỉuXỉuXỉu", predict: "Tài", minOccurrences: 1, weight: 1.7 },
-        { pattern: "XỉuTàiTàiTài", predict: "Xỉu", minOccurrences: 1, weight: 1.7 },
-    ];
-    let bestPatternMatch = null, maxWeightedConfidence = 0;
-    for (const patternDef of reversalPatterns) {
-        const patternDefShort = patternDef.pattern.replace(/Tài/g, 'T').replace(/Xỉu/g, 'X');
-        if (history.length < patternDefShort.length + 1) continue;
-        if (history.slice(0, patternDefShort.length).map(s => s.result === 'Tài' ? 'T' : 'X').reverse().join('') === patternDefShort) {
-            let matchCount = 0, totalPatternOccurrences = 0;
-            for (let i = patternDefShort.length; i < Math.min(history.length - 1, 350); i++) {
-                if (history.slice(i, i + patternDefShort.length).map(s => s.result === 'Tài' ? 'T' : 'X').reverse().join('') === patternDefShort) {
-                    totalPatternOccurrences++;
-                    if (history[i - 1].result === patternDef.predict) matchCount++;
-                }
-            }
-            if (totalPatternOccurrences >= patternDef.minOccurrences && matchCount / totalPatternOccurrences >= 0.68) {
-                if ((matchCount / totalPatternOccurrences) * patternDef.weight > maxWeightedConfidence) {
-                    maxWeightedConfidence = (matchCount / totalPatternOccurrences) * patternDef.weight;
-                    bestPatternMatch = patternDef.predict;
-                }
-            }
-        }
-    }
-    return bestPatternMatch;
+    return null;
 }
 
 function predictLogic12(lastSession, history) {
@@ -344,15 +280,9 @@ function predictLogic13(history) {
     return null;
 }
 
+// [REMOVED v9.4] predictLogic14: contrarian — avg ngắn cao + 2 phiên Tài → trả "Xỉu".
+// → Đảo ngược, đã vô hiệu hoá theo yêu cầu KHÔNG ĐẢO.
 function predictLogic14(history) {
-    if (history.length < 50) return null;
-    const shortTermTotals = history.slice(0, 8).map(s => s.total);
-    const longTermTotals = history.slice(0, 30).map(s => s.total);
-    const shortAvg = shortTermTotals.reduce((a, b) => a + b, 0) / 8;
-    const longAvg = longTermTotals.reduce((a, b) => a + b, 0) / 30;
-    const longStdDev = calculateStdDev(longTermTotals);
-    if (shortAvg > longAvg + (longStdDev * 0.8) && history.slice(0, 2).map(s => s.result).every(r => r === "Tài")) return "Xỉu";
-    if (shortAvg < longAvg - (longStdDev * 0.8) && history.slice(0, 2).map(s => s.result).every(r => r === "Xỉu")) return "Tài";
     return null;
 }
 
@@ -393,14 +323,9 @@ function predictLogic16(history) {
     return null;
 }
 
+// [REMOVED v9.4] predictLogic17: mean reversion — total cao trả "Xỉu", total thấp trả "Tài".
+// → Đảo ngược chiều xu hướng, đã vô hiệu hoá theo yêu cầu KHÔNG ĐẢO.
 function predictLogic17(history) {
-    if (history.length < 100) return null;
-    const totals = history.slice(0, Math.min(history.length, 600)).map(s => s.total);
-    const meanTotal = totals.reduce((a, b) => a + b, 0) / totals.length;
-    const stdDevTotal = calculateStdDev(totals);
-    if (stdDevTotal > 0 && Math.abs(history[0].total - meanTotal) / stdDevTotal >= 1.5) {
-        return history[0].total > meanTotal ? "Xỉu" : "Tài";
-    }
     return null;
 }
 
@@ -521,9 +446,8 @@ function predictLogic22(history) {
             }
         }
         if (streakBreakCount + streakContinueCount > 5) {
-            if (streakBreakCount / (streakBreakCount + streakContinueCount) > 0.65) {
-                if (resultsOnly[0] === 'T') xiuVotes += 1.5; else taiVotes += 1.5; totalContributionWeight += 1.5;
-            } else if (streakContinueCount / (streakBreakCount + streakContinueCount) > 0.65) {
+            // [REMOVED v9.4] nhánh streakBreak > 0.65 vote ngược chiều streak — đảo, đã bỏ.
+            if (streakContinueCount / (streakBreakCount + streakContinueCount) > 0.65) {
                 if (resultsOnly[0] === 'T') taiVotes += 1.5; else xiuVotes += 1.5; totalContributionWeight += 1.5;
             }
         }
@@ -656,12 +580,8 @@ function logic25(arr) {
     return count >= 3 ? last5[0] : null;
 }
 
+// [REMOVED v9.4] logic26: 6+ Tài → 'X', 6+ Xỉu → 'T'. Contrarian cực trị, đã vô hiệu hoá.
 function logic26(arr) {
-    if (!arr || arr.length < 7) return null;
-    const last7 = arr.slice(0, 7);
-    const t = last7.filter(r => r === 'T').length;
-    if (t >= 6) return 'X';
-    if (t <= 1) return 'T';
     return null;
 }
 
@@ -737,31 +657,8 @@ function quantumAnalysis(h, lastTotal) {
         logicMsg: '', confBase: 0, curStreak
     };
 
-    // ĐẢO NHỊP 4 PHIÊN
-    if (h.length >= 5) {
-        const last4 = h.slice(1, 5).join('');
-        if (last4 === '1111' || last4 === '0000') {
-            out.daoNhip4Phien = h[0] === 1 ? 0 : 1;
-            out.isReversal = true; out.reversalFrom = h[0] === 1 ? 'TÀI' : 'XỈU';
-            out.logicMsg = "VIP PRO: ĐẢO NHỊP BẺ BỆT TỪ 4 PHIÊN"; out.confBase = 98;
-        } else if (last4 === '1010' || last4 === '0101') {
-            out.daoNhip4Phien = h[0];
-            out.isReversal = true; out.reversalFrom = h[0] === 1 ? 'XỈU' : 'TÀI';
-            out.logicMsg = "VIP PRO: ĐẢO NHỊP CẮT PING PONG LỪA"; out.confBase = 98;
-        }
-    }
-
-    // V16: ĐẢO NHỊP KÉP
-    if (h.length >= 7) {
-        const sumRecent = h[0] + h[1] + h[2];
-        const sumPrev = h[3] + h[4] + h[5];
-        if (sumRecent === sumPrev && h[0] === h[3] && h[1] === h[4] && h[2] === h[5]) {
-            out.v16 = h[0] === 1 ? 0 : 1; out.v16Msg = "VI LONG V16: ĐẢO NHỊP KÉP LƯỢNG TỬ";
-        }
-        if (curStreak >= 4 && (h[0] ^ h[4]) === 1) {
-            out.v16 = h[0] === 1 ? 0 : 1; out.v16Msg = "VI LONG V16: ÉP BẺ ĐẢO NHỊP BỆT GÃY";
-        }
-    }
+    // [REMOVED v9.4] ĐẢO NHỊP 4 PHIÊN — toàn bộ block đảo ngược, đã vô hiệu hoá.
+    // [REMOVED v9.4] V16 ĐẢO NHỊP KÉP / ÉP BẺ ĐẢO NHỊP — đảo ngược, đã vô hiệu hoá.
     // V15: XOR ENTROPY
     if (h.length >= 15) {
         const xorQ = h[0] ^ h[2] ^ h[4];
@@ -771,7 +668,7 @@ function quantumAnalysis(h, lastTotal) {
     }
     // V14: BẮT CHỚM BỆT
     if (h.length >= 6) {
-        if (h[0] === h[1] && h[1] !== h[2] && h[2] !== h[3] && h[3] !== h[4]) { out.v14 = h[0]; out.v14Msg = "VI LONG V14: BẺ PING PONG -> ÔM BỆT 4D"; }
+        if (h[0] === h[1] && h[1] !== h[2] && h[2] !== h[3] && h[3] !== h[4]) { out.v14 = h[0]; out.v14Msg = "VI LONG V14: NHẬN DIỆN BỆT MỚI HÌNH THÀNH"; }
         else if (h[0] !== h[1] && h[1] !== h[2] && h[2] === h[3] && h[3] === h[4]) { out.v14 = h[0]; out.v14Msg = "VI LONG V14: NHẬN DIỆN BỆT TỪ CẦU 1-1 LỪA"; }
     }
     // V13: BÁM CẦU
@@ -781,10 +678,7 @@ function quantumAnalysis(h, lastTotal) {
         if (changes <= 3 && curStreak >= 2) { out.v13 = h[0]; out.v13Msg = "MÍT V13: BÁM CẦU TREND ỔN ĐỊNH VIP"; }
         else if (changes >= 6) {
             if (h[0] === h[1] && h[1] !== h[2] && h[2] === h[3]) { out.v13 = h[0]; out.v13Msg = "MÍT V13: PHÁT HIỆN CẦU LOẠN -> ĐÓN BỆT CHUẨN"; }
-            else if (h[0] !== h[1] && h[1] === h[2] && h[2] !== h[3]) {
-                out.v13 = h[0] === 1 ? 0 : 1; out.v13Msg = "MÍT V13: CẮT DÂY LOẠN LỪA ĐẢO";
-                out.isReversal = true; out.reversalFrom = h[0] === 1 ? 'TÀI' : 'XỈU';
-            }
+            // [REMOVED v9.4] V13 CẮT DÂY LOẠN LỪA ĐẢO — đảo ngược, đã vô hiệu hoá.
         }
     }
     // V8: TỔNG 3 VIÊN
@@ -809,12 +703,10 @@ function quantumAnalysis(h, lastTotal) {
         };
         if (map[lastTotal]) { out.v8 = map[lastTotal][0]; out.v8Conf = map[lastTotal][1]; out.v8Msg = `CẦU V8: ${map[lastTotal][2]}`; }
     }
-    // Fast derivative
+    // Fast derivative — đã bỏ nhánh đảo, chỉ giữ nhánh theo nhịp h[0]
     if (h.length >= 6) {
-        let recentChanges = 0;
-        for (let i = 0; i < 3; i++) { if (h[i] !== h[i + 1]) recentChanges++; }
-        if (recentChanges === 3) out.fastDerivative = h[0] === 1 ? 0 : 1;
-        else if (h[1] === h[2] && h[2] === h[3] && h[0] !== h[1]) out.fastDerivative = h[0];
+        // [REMOVED v9.4] nhánh recentChanges===3 trả ngược h[0] — đảo ngược, đã bỏ.
+        if (h[1] === h[2] && h[2] === h[3] && h[0] !== h[1]) out.fastDerivative = h[0];
     }
     // Micro trend
     if (h.length >= 5) {
@@ -830,17 +722,8 @@ function quantumAnalysis(h, lastTotal) {
         else if (pStr.startsWith('100111') || pStr.startsWith('011000')) { out.v4 = h[0] === 1 ? 1 : 0; out.v4Msg = "CẦU V4: THÁP TIẾN CẤP ĐANG MỞ"; }
         else if (h.length >= 12 && h.slice(0, 6).join('') === h.slice(6, 12).join('')) { out.v4 = h[6]; out.v4Msg = "CẦU V4: BÃO LẶP CHU KỲ 6 NHỊP"; }
     }
-    // V5
-    if (curStreak > 6) {
-        out.v5 = h[0] === 1 ? 0 : 1; out.v5Msg = "CẦU V5: ĐỈNH BỆT ẢO -> ÉP BẺ NHỊP";
-        out.isReversal = true; out.reversalFrom = h[0] === 1 ? 'TÀI' : 'XỈU';
-    }
-    // V6
-    if (h.length >= 30) {
-        let isPingPong = true;
-        for (let i = 0; i < 8; i++) { if (h[i] === h[i + 1]) isPingPong = false; }
-        if (isPingPong) { out.v6 = h[0] === 1 ? 0 : 1; out.v6Msg = "CẦU V6: PING PONG DÀI HẠN (1-1)"; }
-    }
+    // [REMOVED v9.4] V5 ĐỈNH BỆT ẢO -> ÉP BẺ NHỊP — đảo ngược, đã vô hiệu hoá.
+    // [REMOVED v9.4] V6 PING PONG DÀI HẠN (bẻ) — đảo ngược, đã vô hiệu hoá.
     // V7
     if (h.length >= 15) {
         const xorVal = h[0] ^ h[1] ^ h[2];
@@ -892,39 +775,36 @@ function deepAnalysis(gameId, S) {
     let isReversal = Q.isReversal, reversalFrom = Q.reversalFrom;
 
     if (gameId === 'lc79_md5') {
-        const apiHistoryStr = h.slice(0, 5).join('');
-        if (apiHistoryStr === '11111' || apiHistoryStr === '00000') {
-            finalPred = h[0] === 1 ? 0 : 1; logicMsg = "LC MD5: ĐỈNH BỆT -> BẺ"; confBase = 98;
-        } else if (apiHistoryStr.startsWith('101') || apiHistoryStr.startsWith('010')) {
-            finalPred = h[0] === 1 ? 0 : 1; logicMsg = "LC MD5: DÂY PING PONG"; confBase = 98;
+        // [v9.4] Bỏ toàn bộ nhánh đảo. Ưu tiên ensemble vote, kế đến theo nhịp h[0].
+        if (votes.tai > votes.xiu + 1.5) {
+            finalPred = 1; logicMsg = "LC MD5: AI ĐỒNG THUẬN (TÀI)"; confBase = 90;
+        } else if (votes.xiu > votes.tai + 1.5) {
+            finalPred = 0; logicMsg = "LC MD5: AI ĐỒNG THUẬN (XỈU)"; confBase = 90;
         } else if (h[0] === h[1] && h[1] === h[2]) {
-            finalPred = h[0]; logicMsg = "LC MD5: THEO BỆT MỚI"; confBase = 98;
+            finalPred = h[0]; logicMsg = "LC MD5: THEO BỆT MỚI"; confBase = 92;
         } else {
-            finalPred = h[0] === 1 ? 0 : 1; logicMsg = "LC MD5: ĐẢO NHỊP CHU KỲ NẮN"; confBase = 98;
-            isReversal = true; reversalFrom = h[0] === 1 ? 'TÀI' : 'XỈU';
+            finalPred = h[0]; logicMsg = "LC MD5: THEO NHỊP CƠ BẢN"; confBase = 70;
         }
     } else {
-        // LC79 HU - ưu tiên đảo nhịp 4 phiên + ensemble + V3..V16
-        if (Q.daoNhip4Phien !== -1) { finalPred = Q.daoNhip4Phien; logicMsg = Q.logicMsg; confBase = Q.confBase; }
-        else if (votes.tai > votes.xiu + 2 && Q.v16 === -1 && Q.v15 === -1) {
+        // LC79 HU - [v9.4] BỎ HẾT NHÁNH ĐẢO. Ưu tiên ensemble + V-signal không-đảo + theo nhịp.
+        // (Q.daoNhip4Phien, Q.v16, Q.v6, Q.v5, Q.fastDerivative-reversal đã bị vô hiệu hoá)
+        if (votes.tai > votes.xiu + 2 && Q.v15 === -1) {
             finalPred = 1; logicMsg = "VI LONG VIP: AI ĐỒNG THUẬN (TÀI)"; confBase = 95 + Math.min(Math.floor(votes.tai), 4);
-        } else if (votes.xiu > votes.tai + 2 && Q.v16 === -1 && Q.v15 === -1) {
+        } else if (votes.xiu > votes.tai + 2 && Q.v15 === -1) {
             finalPred = 0; logicMsg = "VI LONG VIP: AI ĐỒNG THUẬN (XỈU)"; confBase = 95 + Math.min(Math.floor(votes.xiu), 4);
         }
-        else if (Q.v16 !== -1) { finalPred = Q.v16; logicMsg = Q.v16Msg; confBase = 99; isReversal = true; reversalFrom = h[0] === 1 ? 'TÀI' : 'XỈU'; }
         else if (Q.v15 !== -1) { finalPred = Q.v15; logicMsg = Q.v15Msg; confBase = 99; }
         else if (Q.v14 !== -1) { finalPred = Q.v14; logicMsg = Q.v14Msg; confBase = 99; }
         else if (Q.v13 !== -1) { finalPred = Q.v13; logicMsg = Q.v13Msg; confBase = 99; }
         else if (Q.v11 !== -1) { finalPred = Q.v11; logicMsg = Q.v11Msg; confBase = 99; }
         else if (Q.v8 !== -1) { finalPred = Q.v8; logicMsg = Q.v8Msg; confBase = Q.v8Conf; }
         else if (Q.v7 !== -1) { finalPred = Q.v7; logicMsg = Q.v7Msg; confBase = 99; }
-        else if (Q.v6 !== -1) { finalPred = Q.v6; logicMsg = Q.v6Msg; confBase = 99; }
-        else if (Q.v5 !== -1) { finalPred = Q.v5; logicMsg = Q.v5Msg; confBase = 99; }
         else if (Q.v4 !== -1) { finalPred = Q.v4; logicMsg = Q.v4Msg; confBase = 99; }
         else if (Q.v3 !== -1) { finalPred = Q.v3; logicMsg = Q.v3Msg; confBase = 98; }
         else if (Q.fastDerivative !== -1) { finalPred = Q.fastDerivative; logicMsg = "VIP 9: BẮT NGUYÊN TỬ NHANH"; confBase = 95; }
         else if (Q.microTrend !== -1 && Q.curStreak <= 3) { finalPred = Q.microTrend; logicMsg = "VIP MÍT 10: SIÊU TRỌNG SỐ VỊ TẬP CHUNG"; confBase = 94; }
-        else { finalPred = h[0] === 1 ? 0 : 1; logicMsg = "ĐẢO NHỊP TIÊU CHUẨN VIP"; confBase = 85; }
+        // [v9.4] Fallback đổi từ ĐẢO NHỊP → THEO NHỊP CƠ BẢN
+        else { finalPred = h[0]; logicMsg = "THEO NHỊP CƠ BẢN"; confBase = 70; }
     }
 
     // ==================== ĐỘ TIN CẬY THỰC TẾ (50-95%) ====================
@@ -950,19 +830,16 @@ function deepAnalysis(gameId, S) {
     conf += agreeV * 4;
     conf -= disagreeV * 6;
     // Bonus theo nguồn quyết định cuối (tin cậy thuật toán đó)
-    if (logicMsg.includes('LC MD5: ĐỈNH BỆT') || logicMsg.includes('LC MD5: DÂY PING PONG')) conf += 10;
-    else if (logicMsg.includes('LC MD5: THEO BỆT')) conf += 6;
-    else if (logicMsg.includes('LC MD5: ĐẢO NHỊP CHU KỲ')) conf -= 3; // fallback md5 yếu hơn
-    else if (logicMsg.includes('VIP PRO: ĐẢO NHỊP BẺ BỆT')) conf += 12; // 4 phiên bệt
-    else if (logicMsg.includes('VIP PRO: ĐẢO NHỊP CẮT PING PONG')) conf += 10;
-    else if (logicMsg.includes('V16') || logicMsg.includes('V15')) conf += 8;
+    // [v9.4] Bonus theo nguồn quyết định cuối — đã bỏ tham chiếu đến các message ĐẢO không còn tồn tại.
+    if (logicMsg.includes('LC MD5: THEO BỆT')) conf += 6;
+    else if (logicMsg.includes('AI ĐỒNG THUẬN')) conf += 6;
+    else if (logicMsg.includes('V15')) conf += 8;
     else if (logicMsg.includes('V14') || logicMsg.includes('V13')) conf += 6;
     else if (logicMsg.includes('V11') || logicMsg.includes('V8')) conf += 4;
-    else if (logicMsg.includes('V7') || logicMsg.includes('V6') || logicMsg.includes('V5')) conf += 5;
+    else if (logicMsg.includes('V7')) conf += 5;
     else if (logicMsg.includes('V4') || logicMsg.includes('V3')) conf += 3;
-    else if (logicMsg.includes('AI ĐỒNG THUẬN')) conf += 6;
     else if (logicMsg.includes('VIP 9') || logicMsg.includes('VIP MÍT 10')) conf += 0;
-    else if (logicMsg === 'ĐẢO NHỊP TIÊU CHUẨN VIP') conf -= 8; // fallback yếu nhất
+    else if (logicMsg === 'THEO NHỊP CƠ BẢN' || logicMsg.includes('THEO NHỊP CƠ BẢN')) conf -= 8; // fallback yếu nhất
 
     // Data đầy đủ
     if (h.length >= 30) conf += 4;
@@ -976,7 +853,7 @@ function deepAnalysis(gameId, S) {
     if (h[0] === h[1] && Q.curStreak < 3) conf += 2; // chớm bệt nhẹ
 
     // Trần tin cậy theo nhóm signal
-    if (logicMsg === 'ĐẢO NHỊP TIÊU CHUẨN VIP') conf = Math.min(conf, 65);
+    if (logicMsg === 'THEO NHỊP CƠ BẢN' || logicMsg === 'LC MD5: THEO NHỊP CƠ BẢN') conf = Math.min(conf, 65);
     else if (logicMsg.includes('VIP MÍT 10')) conf = Math.min(conf, 75);
     else if (logicMsg.includes('VIP 9')) conf = Math.min(conf, 78);
 
