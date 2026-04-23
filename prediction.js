@@ -505,7 +505,7 @@ function predictLogic21(history) {
     return null;
 }
 
-function predictLogic22(history) {
+function predictLogic22(history, cauLogData) {
     if (history.length < 15) return null;
     const resultsOnly = history.map(s => s.result === 'Tài' ? 'T' : 'X');
     let taiVotes = 0, xiuVotes = 0, totalContributionWeight = 0;
@@ -603,10 +603,16 @@ const PATTERN_DATA = {
     "xxxxxx": { tai: 8, xiu: 92 }
 };
 
+function analyzePatterns(history) {
+    return [null, "ĐANG PHÂN TÍCH"];
+}
+
 function predictLogic24(history) {
     if (!history || history.length < 5) return null;
     const lastResults = history.map(s => s.result);
     const votes = [];
+    const [patternPred, patternDesc] = analyzePatterns(lastResults);
+    if (patternPred) votes.push(patternPred);
     const patternSeq = lastResults.slice(0, 3).reverse().map(r => r === "Tài" ? "t" : "x").join("");
     if (PATTERN_DATA[patternSeq]) {
         const prob = PATTERN_DATA[patternSeq];
@@ -621,66 +627,51 @@ function predictLogic24(history) {
     return null;
 }
 
-function logic25(historyArr) {
-    // historyArr: 'T'/'X'  hoặc 1/0  (mới nhất ở [0])
-    const last5 = historyArr.slice(0, 5);
+function logic25(history) {
+    const last5 = history.slice(-5);
     let count = 1;
-    for (let i = 1; i < last5.length; i++) {
-        if (last5[i] === last5[0]) count++; else break;
+    for (let i = last5.length - 1; i > 0; i--) {
+        if (last5[i] === last5[i - 1]) count++;
+        else break;
     }
-    if (count >= 3) return last5[0];
+    if (count >= 3) return last5[last5.length - 1];
     return null;
 }
 
-function logic26(historyArr) {
-    const last7 = historyArr.slice(0, 7);
-    const t = last7.filter(r => r === 'T' || r === 1).length;
-    const x = last7.filter(r => r === 'X' || r === 0).length;
-    if (t >= 6) return 'X';
-    if (x >= 6) return 'T';
+function logic26(history) {
+    const last5 = history.slice(-5);
+    const taiCount = last5.filter(r => r === 'Tài').length;
+    const xiuCount = last5.filter(r => r === 'Xỉu').length;
+    if (taiCount >= 7) return 'X';
+    if (xiuCount >= 7) return 'T';
     return null;
 }
 
-// ==================== ENSEMBLE VOTE (gọi tất cả logic 1..24) ====================
+// ==================== ENSEMBLE VOTE (KHỚP 100% userscript gốc) ====================
+// Gốc chỉ gọi 9 logic: L1, L3, L4, L7, L9, L11, L21, L25, L26 — mỗi vote = 1 (không trọng số)
 function ensembleVote(history, lastSession, nextSessionId) {
     const votes = { tai: 0, xiu: 0, details: {} };
-    const calls = [
-        ['logic1', () => predictLogic1(lastSession, history)],
-        ['logic2', () => predictLogic2(nextSessionId, history)],
-        ['logic3', () => predictLogic3(history)],
-        ['logic4', () => predictLogic4(history)],
-        ['logic5', () => predictLogic5(history)],
-        ['logic6', () => predictLogic6(lastSession, history)],
-        ['logic7', () => predictLogic7(history)],
-        ['logic8', () => predictLogic8(history)],
-        ['logic9', () => predictLogic9(history)],
-        ['logic10', () => predictLogic10(history)],
-        ['logic11', () => predictLogic11(history)],
-        ['logic12', () => predictLogic12(lastSession, history)],
-        ['logic13', () => predictLogic13(history)],
-        ['logic14', () => predictLogic14(history)],
-        ['logic15', () => predictLogic15(history)],
-        ['logic16', () => predictLogic16(history)],
-        ['logic17', () => predictLogic17(history)],
-        ['logic18', () => predictLogic18(history)],
-        ['logic19', () => predictLogic19(history)],
-        ['logic21', () => predictLogic21(history)],
-        ['logic22', () => predictLogic22(history)],
-        ['logic23', () => predictLogic23(history)],
-        ['logic24', () => predictLogic24(history)],
-    ];
-    for (const [name, fn] of calls) {
-        try {
-            const r = fn();
-            const w = Math.max(0.5, (logicPerformance[name]?.accuracy || 0.5) + 0.5);
-            if (r === 'Tài') { votes.tai += w; votes.details[name] = 'Tài'; }
-            else if (r === 'Xỉu') { votes.xiu += w; votes.details[name] = 'Xỉu'; }
-        } catch (e) { /* skip */ }
-    }
-    // logic 25/26 trên chuỗi nhị phân
-    const binArr = history.map(s => s.result === 'Tài' ? 'T' : 'X');
-    const r25 = logic25(binArr); if (r25 === 'T') votes.tai++; else if (r25 === 'X') votes.xiu++;
-    const r26 = logic26(binArr); if (r26 === 'T') votes.tai++; else if (r26 === 'X') votes.xiu++;
+    const tally = (name, r) => {
+        if (r === 'Tài') { votes.tai++; votes.details[name] = 'Tài'; }
+        else if (r === 'Xỉu') { votes.xiu++; votes.details[name] = 'Xỉu'; }
+    };
+    try { tally('logic1', predictLogic1(lastSession, history)); } catch (e) {}
+    try { tally('logic3', predictLogic3(history)); } catch (e) {}
+    try { tally('logic4', predictLogic4(history)); } catch (e) {}
+    try { tally('logic7', predictLogic7(history)); } catch (e) {}
+    try { tally('logic9', predictLogic9(history)); } catch (e) {}
+    try { tally('logic11', predictLogic11(history)); } catch (e) {}
+    try { tally('logic21', predictLogic21(history)); } catch (e) {}
+    try {
+        const p25 = logic25(history);
+        if (p25 === 'T') votes.tai++;
+        else if (p25 === 'X') votes.xiu++;
+    } catch (e) {}
+    try {
+        const p26 = logic26(history);
+        if (p26 === 'T') votes.tai++;
+        else if (p26 === 'X') votes.xiu++;
+    } catch (e) {}
     return votes;
 }
 
@@ -830,18 +821,14 @@ function deepAnalysis(gameId, S) {
         return { prediction: null, logic: 'CẦU CHƯA ỔN ĐỊNH', confidence: 0, isReversal: false, reversalFrom: '', expectedNumbers: [] };
     }
 
-    // Tạo historyObjs cho 24 logic gốc (mock dữ liệu xúc xắc)
-    const historyObjs = h.map((r, idx) => ({
+    // historyObjs: mock dữ liệu xúc xắc giống userscript gốc (sid:0, d1:3, d2:3, d3:1)
+    const historyObjs = h.map(r => ({
         result: r === 1 ? "Tài" : "Xỉu",
-        total: S.totals[idx] || (r === 1 ? 14 : 7),
-        sid: (S.lastPhien || 0) - idx,
-        d1: S.diceData[idx]?.d1 || 3,
-        d2: S.diceData[idx]?.d2 || 3,
-        d3: S.diceData[idx]?.d3 || 1,
-        timestamp: Date.now() - idx * 30000
+        total: r === 1 ? 14 : 7,
+        sid: 0, d1: 3, d2: 3, d3: 1
     }));
 
-    // Vote ensemble từ 24 logic
+    // Vote ensemble (chỉ 9 logic theo gốc)
     const votes = ensembleVote(historyObjs, { sid: S.lastPhien, total: S.lastTotal }, S.lastPhien + 1);
 
     // Quantum analysis V3..V16
@@ -854,7 +841,6 @@ function deepAnalysis(gameId, S) {
         const apiHistoryStr = h.slice(0, 5).join('');
         if (apiHistoryStr === '11111' || apiHistoryStr === '00000') {
             finalPred = h[0] === 1 ? 0 : 1; logicMsg = "LC MD5: ĐỈNH BỆT -> BẺ"; confBase = 98;
-            isReversal = true; reversalFrom = h[0] === 1 ? 'TÀI' : 'XỈU';
         } else if (apiHistoryStr.startsWith('101') || apiHistoryStr.startsWith('010')) {
             finalPred = h[0] === 1 ? 0 : 1; logicMsg = "LC MD5: DÂY PING PONG"; confBase = 98;
         } else if (h[0] === h[1] && h[1] === h[2]) {
@@ -884,7 +870,7 @@ function deepAnalysis(gameId, S) {
         else if (Q.v3 !== -1) { finalPred = Q.v3; logicMsg = Q.v3Msg; confBase = 98; }
         else if (Q.fastDerivative !== -1) { finalPred = Q.fastDerivative; logicMsg = "VIP 9: BẮT NGUYÊN TỬ NHANH"; confBase = 95; }
         else if (Q.microTrend !== -1 && Q.curStreak <= 3) { finalPred = Q.microTrend; logicMsg = "VIP MÍT 10: SIÊU TRỌNG SỐ VỊ TẬP CHUNG"; confBase = 94; }
-        else { finalPred = h[0] === 1 ? 0 : 1; logicMsg = "ĐẢO NHỊP TIÊU CHUẨN VIP"; confBase = 85; isReversal = true; reversalFrom = h[0] === 1 ? 'TÀI' : 'XỈU'; }
+        else { finalPred = h[0] === 1 ? 0 : 1; logicMsg = "ĐẢO NHỊP TIÊU CHUẨN VIP"; confBase = 85; }
     }
 
     const finalConf = Math.min(Math.max(confBase + (h[0] === h[1] && Q.curStreak < 3 ? 2 : 0), 65), 99);
@@ -927,26 +913,29 @@ function deepAnalysis(gameId, S) {
     };
 }
 
-// ==================== QUẢN LÝ VỐN (CAPITAL) ====================
+// ==================== QUẢN LÝ VỐN (CAPITAL) — KHỚP 100% userscript gốc ====================
 const CAPITAL = {
-    formatMoney: (n) => new Intl.NumberFormat('vi-VN').format(Math.round(n)) + 'đ',
+    formatMoney: (num) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."),
     calculateBet: (current, target, mode, confidence) => {
         if (current >= target) return { amount: 0, percent: 0, msg: "ĐÃ ĐẠT MỤC TIÊU LÃI" };
-        if (current <= 0) return { amount: 0, percent: 0, msg: "HẾT VỐN, CẦN NẠP THÊM" };
-        const safeTable = { 95: 12.5, 90: 8.5, 85: 5.5, 80: 3.5, 75: 1.5 };
-        const fastTable = { 95: 25.5, 90: 18.5, 85: 12.5, 80: 8.5, 75: 4.5 };
-        const table = mode === 'fast' ? fastTable : safeTable;
-        let percent = 1;
-        const tiers = Object.keys(table).map(Number).sort((a, b) => b - a);
-        for (const t of tiers) {
-            if (confidence >= t) { percent = table[t]; break; }
+        let percent = 0;
+        if (mode === 'safe') {
+            if (confidence >= 95) percent = 12.5;
+            else if (confidence >= 90) percent = 8.5;
+            else if (confidence >= 85) percent = 5.5;
+            else if (confidence >= 80) percent = 3.5;
+            else if (confidence >= 75) percent = 1.5;
+            else percent = 0;
+        } else {
+            if (confidence >= 95) percent = 25.5;
+            else if (confidence >= 90) percent = 18.5;
+            else if (confidence >= 85) percent = 12.5;
+            else if (confidence >= 80) percent = 8.5;
+            else if (confidence >= 75) percent = 4.5;
+            else percent = 0;
         }
-        const amount = Math.round(current * percent / 100 / 1000) * 1000;
-        return {
-            amount,
-            percent,
-            msg: `VÀO ${CAPITAL.formatMoney(amount)} (${percent}% vốn) - ${mode === 'fast' ? 'NHANH CHÓNG' : 'AN TOÀN'}`
-        };
+        const amount = Math.floor((current * percent) / 100);
+        return { amount, percent, msg: amount > 0 ? "VÀO LỆNH" : "NÊN BỎ QUA" };
     }
 };
 
