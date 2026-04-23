@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOOL VIP VI LONG - SUPER AI LC79 V9.2</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #00051a 0%, #1a0033 40%, #0059b3 60%, #4d0099 100%);
+    background-size: 300% 300%;
+    animation: gradientBG 10s ease infinite;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 20px; color: #fff;
+    user-select: none;
+}
+@keyframes gradientBG { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+@keyframes spin { 100%{transform:rotate(360deg)} }
+@keyframes spinReverse { 100%{transform:rotate(-360deg)} }
+@keyframes rainbowGlow {
+    0%{box-shadow:0 0 15px #ff0000,inset 0 0 10px #ff0000;border-color:#ff0000}
+    25%{box-shadow:0 0 15px #00ff00,inset 0 0 10px #00ff00;border-color:#00ff00}
+    50%{box-shadow:0 0 15px #0000ff,inset 0 0 10px #0000ff;border-color:#0000ff}
+    75%{box-shadow:0 0 15px #ff00ff,inset 0 0 10px #ff00ff;border-color:#ff00ff}
+    100%{box-shadow:0 0 15px #ff0000,inset 0 0 10px #ff0000;border-color:#ff0000}
+}
+@keyframes fastBlinkGreen { 0%,100%{opacity:1;box-shadow:0 0 30px #0f0,inset 0 0 20px #0f0;background:#0f0} 50%{opacity:0.2;background:rgba(0,255,0,0.1)} }
+@keyframes fastBlinkRed { 0%,100%{opacity:1;box-shadow:0 0 30px #f00,inset 0 0 20px #f00;background:#f00} 50%{opacity:0.2;background:rgba(255,0,0,0.1)} }
+@keyframes centerFlashGreen { 0%,100%{border-color:#0f0;box-shadow:0 0 25px #0f0,inset 0 0 15px #0f0} 50%{border-color:transparent;box-shadow:none} }
+@keyframes centerFlashRed { 0%,100%{border-color:#f00;box-shadow:0 0 25px #f00,inset 0 0 15px #f00} 50%{border-color:transparent;box-shadow:none} }
+@keyframes popIn { 0%{transform:scale(0.8);opacity:0} 100%{transform:scale(1);opacity:1} }
+@keyframes nhayDaoKq { 0%,100%{opacity:1;transform:scale(1.1)} 50%{opacity:0.5;transform:scale(0.9)} }
+@keyframes bgNhayDao {
+    0%,100%{background:rgba(255,165,0,0.1);border-color:#ffa500;box-shadow:inset 0 0 15px #ffa500}
+    50%{background:rgba(0,255,255,0.1);border-color:#00ffff;box-shadow:inset 0 0 15px #00ffff}
+}
+
+.header { text-align:center; margin-bottom:20px; }
+.header h1 { font-size:20px; font-weight:900; letter-spacing:3px; text-transform:uppercase; text-shadow:0 0 20px #00ffff; color:#fff; }
+.header p { color:#aaa; font-size:12px; margin-top:5px; }
+
+.game-tabs { display:flex; gap:10px; margin-bottom:20px; }
+.tab-btn {
+    padding:10px 20px; border:1px solid rgba(0,255,255,0.4); background:rgba(0,0,0,0.5);
+    color:#aaa; border-radius:10px; cursor:pointer; font-weight:bold; font-size:13px;
+    transition:0.3s;
+}
+.tab-btn.active { background:rgba(0,255,255,0.2); color:#00ffff; border-color:#00ffff; box-shadow:0 0 15px rgba(0,255,255,0.3); }
+
+.god-pill {
+    width:320px; padding:20px 15px;
+    background:linear-gradient(135deg,rgba(10,0,30,0.9),rgba(40,0,80,0.95));
+    backdrop-filter:blur(20px);
+    border-radius:25px; display:flex; flex-direction:column; align-items:center;
+    box-shadow:0 15px 40px rgba(0,0,0,0.8),inset 0 0 30px rgba(255,0,255,0.2);
+    animation:rainbowGlow 8s infinite; position:relative; overflow:hidden;
+    margin-bottom:20px;
+}
+.god-pill::before {
+    content:'VI LONG 4D'; position:absolute; top:50%; left:50%;
+    transform:translate(-50%,-50%) rotate(-15deg);
+    font-size:50px; font-weight:900; color:rgba(255,255,255,0.04);
+    pointer-events:none; white-space:nowrap; letter-spacing:8px; z-index:0;
+}
+.current-number-header {
+    width:100%; background:rgba(0,0,0,0.6); border:1px solid rgba(0,255,255,0.3);
+    border-radius:12px; padding:6px; margin-bottom:15px; z-index:5; position:relative;
+    display:flex; justify-content:space-between; align-items:center;
+}
+.c-label { font-size:11px; color:#aaa; font-weight:bold; text-transform:uppercase; letter-spacing:1px; }
+.c-value { font-size:18px; color:#00ffff; font-weight:900; text-shadow:0 0 15px #00ffff; letter-spacing:2px; }
+
+.pill-main-row { display:flex; align-items:center; justify-content:space-between; width:100%; z-index:5; position:relative; }
+.signal-col { display:flex; flex-direction:column; align-items:center; width:55px; }
+.signal-text-top { font-size:14px; font-weight:900; color:#fff; margin-bottom:8px; letter-spacing:2px; transition:0.3s; }
+.signal-lamp { width:42px; height:42px; border-radius:50%; background:rgba(10,10,10,0.8); border:2px solid rgba(255,255,255,0.3); transition:all 0.4s; box-shadow:inset 0 0 10px rgba(0,0,0,0.9); }
+.active-tai { animation:fastBlinkGreen 0.5s infinite; }
+.active-tai-text { color:#0f0 !important; text-shadow:0 0 15px #0f0 !important; font-size:16px; }
+.active-xiu { animation:fastBlinkRed 0.5s infinite; }
+.active-xiu-text { color:#f00 !important; text-shadow:0 0 15px #f00 !important; font-size:16px; }
+
+.ai-core { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; padding:0 10px; }
+.phien-label {
+    position:absolute; top:-35px; left:50%; transform:translateX(-50%);
+    font-size:11px; color:#fff; font-family:monospace; font-weight:bold;
+    background:rgba(0,0,0,0.8); padding:4px 10px; border-radius:8px;
+    border:1px solid rgba(0,255,255,0.6); z-index:10; white-space:nowrap;
+    box-shadow:0 0 15px rgba(0,255,255,0.3);
+}
+.ai-logo-wrap {
+    width:65px; height:65px; border-radius:50%; position:relative;
+    display:flex; align-items:center; justify-content:center; margin-bottom:8px;
+    background:rgba(0,15,30,0.7); border:2px solid rgba(0,255,255,0.5);
+    box-shadow:0 0 25px rgba(0,255,255,0.5);
+}
+.center-blink-tai { animation:centerFlashGreen 0.5s infinite; }
+.center-blink-xiu { animation:centerFlashRed 0.5s infinite; }
+.orbit-1 { position:absolute; width:135%; height:135%; border-radius:50%; border:2px solid transparent; border-top-color:#00ffff; border-left-color:#00ffff; animation:spin 2s linear infinite; pointer-events:none; }
+.orbit-2 { position:absolute; width:165%; height:165%; border-radius:50%; border:3px solid transparent; border-bottom-color:#ff00ff; border-right-color:#ff00ff; animation:spinReverse 3s linear infinite; pointer-events:none; }
+.orbit-3 { position:absolute; width:110%; height:110%; border-radius:50%; border:2px dotted rgba(255,255,255,0.9); animation:spin 4s linear infinite; pointer-events:none; opacity:0.8; }
+.ai-logo { width:50px; height:50px; border-radius:50%; z-index:2; box-shadow:0 0 20px rgba(0,255,255,0.9); background:#000; border:2px solid #00ffff; object-fit:cover; }
+
+.msg-container { width:100%; margin-top:15px; background:rgba(0,0,0,0.5); border-radius:12px; padding:10px; border:1px dashed rgba(255,255,255,0.2); z-index:5; position:relative; }
+.ai-msg { font-size:11px; text-transform:uppercase; font-weight:900; text-align:center; margin-bottom:5px; }
+#ai-status { color:#00ffff; font-size:13px; margin-bottom:8px; letter-spacing:1px; }
+#ai-conf { color:#0f0; font-size:12px; background:rgba(0,255,0,0.1); padding:3px 8px; border-radius:5px; display:inline-block; }
+#ai-detail { color:#fff; font-size:11px; line-height:1.6; border-top:1px solid rgba(255,255,255,0.1); padding-top:8px; margin-top:5px; text-align:left; }
+
+.reversal-flash-box { animation:bgNhayDao 0.4s infinite; color:#fff; font-size:11px; font-weight:900; text-align:center; padding:8px; border-radius:8px; margin-bottom:8px; border:1px dashed; display:flex; justify-content:center; align-items:center; gap:5px; }
+
+/* ==================== QUẢN LÝ VỐN ==================== */
+.capital-box {
+    width:320px; background:rgba(10,10,25,0.85); backdrop-filter:blur(25px);
+    border:1px solid rgba(255,215,0,0.5); border-radius:15px; padding:15px;
+    margin-bottom:15px; box-shadow:0 0 20px rgba(255,215,0,0.2);
+}
+.capital-box h3 { font-size:13px; color:#ffd700; text-transform:uppercase; letter-spacing:2px; margin-bottom:12px; text-align:center; text-shadow:0 0 10px #ffd700; }
+.capital-input-group { margin-bottom:10px; }
+.capital-input-group label { display:block; font-size:11px; color:#aaa; margin-bottom:4px; font-weight:bold; text-transform:uppercase; }
+.capital-input-group input, .capital-input-group select {
+    width:100%; padding:8px 10px; background:rgba(0,0,0,0.6); border:1px solid rgba(0,255,255,0.3);
+    border-radius:8px; color:#fff; font-size:13px; font-weight:bold; font-family:inherit;
+}
+.capital-input-group input:focus, .capital-input-group select:focus { border-color:#00ffff; box-shadow:0 0 10px rgba(0,255,255,0.4); }
+.capital-input-group select option { background:#0a0a19; color:#fff; }
+
+.capital-suggest {
+    margin-top:10px; padding:10px; border-radius:10px;
+    background:linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,0,255,0.1));
+    border:1px dashed #ffd700; text-align:center;
+}
+.capital-suggest .label { font-size:10px; color:#aaa; text-transform:uppercase; letter-spacing:1px; }
+.capital-suggest .amount { font-size:20px; font-weight:900; color:#ffd700; text-shadow:0 0 10px #ffd700; margin:4px 0; letter-spacing:1px; }
+.capital-suggest .msg { font-size:11px; font-weight:bold; }
+.capital-suggest .msg.go { color:#0f0; }
+.capital-suggest .msg.skip { color:#f00; }
+.capital-suggest .msg.done { color:#ffd700; }
+
+.stats-box {
+    width:320px; background:rgba(10,10,25,0.85); backdrop-filter:blur(25px);
+    border:1px solid rgba(0,255,255,0.3); border-radius:15px; padding:15px;
+    margin-bottom:15px;
+}
+.stats-box h3 { font-size:13px; color:#00ffff; text-transform:uppercase; letter-spacing:2px; margin-bottom:10px; text-align:center; }
+.stats-row { display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px; }
+.stats-row span:first-child { color:#aaa; }
+.stats-row span:last-child { color:#fff; font-weight:bold; }
+
+.history-box {
+    width:320px; background:rgba(10,10,25,0.85); backdrop-filter:blur(25px);
+    border:1px solid rgba(0,255,255,0.3); border-radius:15px; padding:15px;
+    max-height:300px; overflow-y:auto;
+}
+.history-box h3 { font-size:13px; color:#00ffff; text-transform:uppercase; letter-spacing:2px; margin-bottom:10px; text-align:center; }
+.history-item { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:11px; }
+.history-item .phien { color:#aaa; }
+.history-item .pred { font-weight:bold; }
+.history-item .pred.tai { color:#0f0; }
+.history-item .pred.xiu { color:#f00; }
+.history-item .result-icon { font-size:14px; }
+.history-item .conf { color:#888; }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1><i class="fas fa-microchip"></i> SUPER AI VI LONG V9.2</h1>
+    <p id="server-status">Đang kết nối server...</p>
+</div>
+
+<div class="game-tabs">
+    <button class="tab-btn active" onclick="switchGame('lc79_hu')">TÀI XỈU HŨ</button>
+    <button class="tab-btn" onclick="switchGame('lc79_md5')">TÀI XỈU MD5</button>
+</div>
+
+<div class="god-pill">
+    <div class="current-number-header">
+        <span class="c-label">Xúc Xắc Vừa Ra:</span>
+        <span class="c-value" id="current-dice-val">--</span>
+    </div>
+    <div class="pill-main-row">
+        <div class="signal-col">
+            <div class="signal-text-top" id="text-tai">TÀI</div>
+            <div id="lamp-tai" class="signal-lamp"></div>
+        </div>
+        <div class="ai-core">
+            <div id="ai-phien" class="phien-label">PHIÊN CHỜ</div>
+            <div id="ai-center-box" class="ai-logo-wrap">
+                <div class="orbit-1" id="orb1"></div>
+                <div class="orbit-2" id="orb2"></div>
+                <div class="orbit-3" id="orb3"></div>
+                <img id="ai-logo-img" src="https://lc79.cx/wp-content/uploads/2025/10/cropped-logo-lc79-com-2.webp" class="ai-logo" onerror="this.src='https://i.imgur.com/K0r5w5c.png'">
+            </div>
+        </div>
+        <div class="signal-col">
+            <div class="signal-text-top" id="text-xiu">XỈU</div>
+            <div id="lamp-xiu" class="signal-lamp"></div>
+        </div>
+    </div>
+    <div class="msg-container">
+        <div id="ai-status" class="ai-msg">ĐANG KẾT NỐI...</div>
+        <div style="text-align:center"><div id="ai-conf" class="ai-msg">CONFIDENCE --</div></div>
+        <div id="ai-detail" class="ai-msg"></div>
+    </div>
+</div>
+
+<!-- ==================== QUẢN LÝ VỐN 24/7 VIP ==================== -->
+<div class="capital-box">
+    <h3><i class="fas fa-coins"></i> QUẢN LÝ VỐN 24/7 VIP</h3>
+    <div class="capital-input-group">
+        <label>Vốn Hiện Tại (VNĐ):</label>
+        <input type="number" id="input-capital" value="200000" placeholder="VD: 200000">
+    </div>
+    <div class="capital-input-group">
+        <label>Mục Tiêu Chốt Lãi (VNĐ):</label>
+        <input type="number" id="input-target" value="1000000" placeholder="VD: 1000000">
+    </div>
+    <div class="capital-input-group">
+        <label>Chế Độ Đánh:</label>
+        <select id="input-mode">
+            <option value="safe">An Toàn 24/7 (Phân Tích Vốn Kỹ Nhất)</option>
+            <option value="fast">Nhanh Chóng (Vốn Mạnh -&gt; Nhanh Lãi)</option>
+        </select>
+    </div>
+    <div class="capital-suggest">
+        <div class="label">Số Tiền Đề Xuất Cho Phiên Tới</div>
+        <div class="amount" id="cap-amount">-- VNĐ</div>
+        <div class="msg go" id="cap-msg">CHỜ DỰ ĐOÁN...</div>
+        <div style="font-size:10px;color:#aaa;margin-top:4px" id="cap-percent">-- % vốn</div>
+    </div>
+</div>
+
+<div class="stats-box">
+    <h3><i class="fas fa-chart-bar"></i> Thống Kê</h3>
+    <div class="stats-row"><span>Độ chính xác:</span><span id="stat-accuracy">--</span></div>
+    <div class="stats-row"><span>Đúng / Tổng:</span><span id="stat-correct">--</span></div>
+    <div class="stats-row"><span>Lịch sử tích lũy:</span><span id="stat-history">--</span></div>
+    <div class="stats-row"><span>Cập nhật lúc:</span><span id="stat-updated">--</span></div>
+</div>
+
+<div class="history-box">
+    <h3><i class="fas fa-history"></i> Lịch Sử Dự Đoán</h3>
+    <div id="history-list"></div>
+</div>
+
+<script>
+let currentGame = 'lc79_hu';
+let lastPhien = 0;
+// Cùng origin với server Express -> không cần CORS proxy
+function apiUrl(path) { return path; }
+
+// ==================== QUẢN LÝ VỐN (LẤY TỪ FILE JS GỐC) ====================
+const CAPITAL = {
+    current: 200000,
+    target: 1000000,
+    mode: 'safe',
+
+    sync: () => {
+        const c = document.getElementById('input-capital');
+        const t = document.getElementById('input-target');
+        const m = document.getElementById('input-mode');
+        if (c) CAPITAL.current = parseInt(c.value) || 200000;
+        if (t) CAPITAL.target = parseInt(t.value) || 1000000;
+        if (m) CAPITAL.mode = m.value;
+    },
+
+    calculateBet: (confidence) => {
+        if (CAPITAL.current >= CAPITAL.target) return { amount: 0, percent: 0, msg: "ĐÃ ĐẠT MỤC TIÊU LÃI", type: 'done' };
+        let percent = 0;
+        if (CAPITAL.mode === 'safe') {
+            if (confidence >= 95) percent = 12.5;
+            else if (confidence >= 90) percent = 8.5;
+            else if (confidence >= 85) percent = 5.5;
+            else if (confidence >= 80) percent = 3.5;
+            else if (confidence >= 75) percent = 1.5;
+            else percent = 0;
+        } else {
+            if (confidence >= 95) percent = 25.5;
+            else if (confidence >= 90) percent = 18.5;
+            else if (confidence >= 85) percent = 12.5;
+            else if (confidence >= 80) percent = 8.5;
+            else if (confidence >= 75) percent = 4.5;
+            else percent = 0;
+        }
+        const amount = Math.floor((CAPITAL.current * percent) / 100);
+        return {
+            amount, percent,
+            msg: amount > 0 ? "VÀO LỆNH" : "NÊN BỎ QUA",
+            type: amount > 0 ? 'go' : 'skip'
+        };
+    },
+
+    formatMoney: (num) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+};
+
+['input-capital','input-target','input-mode'].forEach(id => {
+    document.getElementById(id).addEventListener('change', CAPITAL.sync);
+    document.getElementById(id).addEventListener('input', CAPITAL.sync);
+});
+
+function updateCapitalUI(confidence) {
+    CAPITAL.sync();
+    const r = CAPITAL.calculateBet(confidence || 0);
+    document.getElementById('cap-amount').innerText = CAPITAL.formatMoney(r.amount) + ' VNĐ';
+    const msgEl = document.getElementById('cap-msg');
+    msgEl.innerText = r.msg;
+    msgEl.className = 'msg ' + r.type;
+    document.getElementById('cap-percent').innerText = r.percent + '% vốn  •  Conf: ' + (confidence||0) + '%';
+}
+
+function switchGame(gameId) {
+    currentGame = gameId;
+    document.querySelectorAll('.tab-btn').forEach((b,i) => {
+        b.classList.toggle('active', (i===0&&gameId==='lc79_hu')||(i===1&&gameId==='lc79_md5'));
+    });
+    lastPhien = 0;
+    resetUI();
+    fetchData();
+}
+
+function resetUI() {
+    document.getElementById('lamp-tai').className = 'signal-lamp';
+    document.getElementById('lamp-xiu').className = 'signal-lamp';
+    document.getElementById('text-tai').className = 'signal-text-top';
+    document.getElementById('text-xiu').className = 'signal-text-top';
+    document.getElementById('ai-center-box').className = 'ai-logo-wrap';
+    document.getElementById('ai-status').innerText = 'ĐANG PHÂN TÍCH...';
+    document.getElementById('ai-conf').innerText = 'CONFIDENCE --';
+    document.getElementById('ai-detail').innerHTML = '';
+    document.getElementById('orb1').style.animationDuration = '2s';
+    document.getElementById('orb2').style.animationDuration = '3s';
+    document.getElementById('orb3').style.animationDuration = '4s';
+}
+
+async function fetchData() {
+    try {
+        const [predRes, histRes] = await Promise.all([
+            fetch(apiUrl(`/predict/${currentGame}`)),
+            fetch(apiUrl(`/history/${currentGame}`))
+        ]);
+        const pred = await predRes.json();
+        const hist = await histRes.json();
+
+        document.getElementById('server-status').innerText = '✅ Server online - Tự động cập nhật mỗi 3 giây';
+
+        document.getElementById('ai-phien').innerText = `#${pred.phien}`;
+
+        if (pred.lastTotal) {
+            const isTai = pred.lastTotal > 10;
+            document.getElementById('current-dice-val').innerHTML =
+                `<span style="color:${isTai?'#0f0':'#f00'}">${pred.lastTotal} (${isTai?'TÀI':'XỈU'})</span>`;
+        }
+
+        if (pred.prediction) {
+            const isTai = pred.prediction === 'TAI';
+            document.getElementById('ai-status').innerText = pred.logic || 'AI ĐÃ DỰ ĐOÁN';
+            document.getElementById('ai-status').style.color = pred.confidence >= 80 ? '#0f0' : '#00ffff';
+            document.getElementById('ai-conf').innerText = `CONFIDENCE ${pred.confidence}%`;
+            document.getElementById('ai-conf').style.color = pred.confidence >= 85 ? '#0f0' : pred.confidence >= 75 ? '#00ffff' : '#f00';
+
+            document.getElementById(`lamp-${isTai?'tai':'xiu'}`).className = `signal-lamp active-${isTai?'tai':'xiu'}`;
+            document.getElementById(`text-${isTai?'tai':'xiu'}`).className = `signal-text-top active-${isTai?'tai':'xiu'}-text`;
+            document.getElementById('ai-center-box').className = `ai-logo-wrap center-blink-${isTai?'tai':'xiu'}`;
+
+            const taiPct = isTai ? pred.confidence : 100 - pred.confidence;
+            const xiuPct = !isTai ? pred.confidence : 100 - pred.confidence;
+            let reversalHtml = '';
+            if (pred.isReversal && pred.reversalFrom) {
+                reversalHtml = `<div class="reversal-flash-box">
+                    <span>⚠️ ĐẢO TỪ</span>
+                    <span style="color:${isTai?'#f00':'#0f0'}">${pred.reversalFrom}</span>
+                    <span>SANG</span>
+                    <span style="color:${isTai?'#0f0':'#f00'};animation:nhayDaoKq 0.2s infinite">${isTai?'TÀI':'XỈU'}</span> ⚠️
+                </div>`;
+            }
+            document.getElementById('ai-detail').innerHTML = `
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;font-weight:bold">
+                    <span>TÀI: <b style="color:#0f0">${taiPct}%</b></span>
+                    <span>XỈU: <b style="color:#f00">${xiuPct}%</b></span>
+                </div>
+                ${reversalHtml}
+                <div style="background:rgba(255,0,255,0.1);border:1px solid rgba(255,0,255,0.5);border-radius:8px;padding:6px;text-align:center">
+                    <div style="color:#aaa;font-size:10px;margin-bottom:2px">CHUỖI GẦN NHẤT:</div>
+                    <div style="color:#ff00ff;font-weight:900;font-size:14px;letter-spacing:3px">${pred.recentHistory||'--'}</div>
+                </div>
+                <div style="background:rgba(0,255,255,0.05);border:1px solid rgba(0,255,255,0.3);border-radius:8px;padding:6px;text-align:center;margin-top:6px">
+                    <div style="color:#aaa;font-size:10px;margin-bottom:2px">CHI TIẾT 3 SỐ XÁC SUẤT CAO NHẤT:</div>
+                    <div style="color:#ff00ff;font-weight:900;font-size:16px;text-shadow:0 0 15px #ff00ff;letter-spacing:3px">${getExpectedNums(pred.lastTotal, isTai)}</div>
+                </div>`;
+
+            // Cập nhật quản lý vốn theo confidence của phiên tới
+            updateCapitalUI(pred.confidence);
+        }
+
+        document.getElementById('stat-accuracy').innerText = hist.accuracy || '--';
+        document.getElementById('stat-correct').innerText = hist.total > 0 ? `${hist.correct} / ${hist.total}` : '--';
+        document.getElementById('stat-history').innerText = `${pred.historyCount || 0} / 605`;
+        document.getElementById('stat-updated').innerText = pred.updatedAt ? new Date(pred.updatedAt).toLocaleTimeString('vi-VN') : '--';
+
+        if (hist.history && hist.history.length > 0) {
+            document.getElementById('history-list').innerHTML = hist.history.slice(0,30).map(h => `
+                <div class="history-item">
+                    <span class="phien">#${h.phien}</span>
+                    <span class="pred ${h.prediction==='TAI'?'tai':'xiu'}">${h.prediction==='TAI'?'TÀI':'XỈU'}</span>
+                    <span class="conf">${h.confidence}%</span>
+                    <span class="result-icon">${h.correct===null?'⏳':h.correct?'✅':'❌'}</span>
+                </div>`).join('');
+        }
+
+    } catch(e) {
+        document.getElementById('server-status').innerText = '❌ Mất kết nối server';
+        document.getElementById('ai-status').innerText = 'LỖI KẾT NỐI';
+    }
+}
+
+fetchData();
+setInterval(fetchData, 3000);
+
+function getExpectedNums(baseSum, isTai) {
+    if (!baseSum) return '--';
+    let arr = [];
+    if (isTai) {
+        if (baseSum <= 6) arr = [11,12,13];
+        else if (baseSum >= 15) arr = [13,14,15];
+        else if (baseSum % 2 === 0) arr = [12,14,16];
+        else arr = [11,13,15];
+    } else {
+        if (baseSum >= 15) arr = [8,9,10];
+        else if (baseSum <= 6) arr = [6,7,8];
+        else if (baseSum % 2 === 0) arr = [6,8,10];
+        else arr = [5,7,9];
+    }
+    return arr.join(', ');
+}
+
+const pill = document.querySelector('.god-pill');
+let active = false, curX = 0, curY = 0, initX = 0, initY = 0, xOff = 0, yOff = 0;
+pill.addEventListener('mousedown', dragStart);
+pill.addEventListener('touchstart', dragStart, {passive:false});
+document.addEventListener('mouseup', dragEnd);
+document.addEventListener('touchend', dragEnd);
+document.addEventListener('mousemove', dragMove);
+document.addEventListener('touchmove', dragMove, {passive:false});
+function dragStart(e) {
+    initX = (e.type==='touchstart'?e.touches[0].clientX:e.clientX) - xOff;
+    initY = (e.type==='touchstart'?e.touches[0].clientY:e.clientY) - yOff;
+    active = true;
+}
+function dragEnd() { initX=curX; initY=curY; active=false; }
+function dragMove(e) {
+    if (!active) return; e.preventDefault();
+    curX = (e.type==='touchmove'?e.touches[0].clientX:e.clientX) - initX;
+    curY = (e.type==='touchmove'?e.touches[0].clientY:e.clientY) - initY;
+    xOff=curX; yOff=curY;
+    pill.style.transform = `translate3d(${curX}px,${curY}px,0)`;
+}
+</script>
+</body>
+</html>
