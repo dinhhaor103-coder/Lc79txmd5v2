@@ -411,7 +411,7 @@ async function fetchData() {
                     <span class="phien">#${h.phien}</span>
                     <span class="pred ${h.prediction==='TAI'?'tai':'xiu'}">${h.prediction==='TAI'?'TÀI':'XỈU'}</span>
                     <span class="conf">${h.confidence}%</span>
-                    <span class="result-icon">${h.correct===null?'⏳':h.correct?'✅':'❌'}</span>
+                    <span class="result-icon">${h.actual==='SKIPPED'?'⊘':(h.actual===null||h.correct===null?'⏳':h.correct?'✅':'❌')}</span>
                 </div>`).join('');
         }
 
