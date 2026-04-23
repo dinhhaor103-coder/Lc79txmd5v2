@@ -189,6 +189,16 @@ async function updateGame(gid) {
     if (latestPhien > S.lastPhien) {
         const actual = (newHistory[0] === 1) ? 'TAI' : 'XIU';
 
+        // SỬA: dọn các dự đoán treo cho phiên CŨ HƠN latestPhien (không bao giờ chốt được nữa
+        // do mất kết nối / restart làm nhảy phiên). Đánh dấu actual='SKIPPED' để loại khỏi
+        // thống kê accuracy thay vì để rác vĩnh viễn với actual=null.
+        for (const p of S.predLog) {
+            if (p.actual === null && p.phien < latestPhien) {
+                p.actual = 'SKIPPED';
+                p.correct = null;
+            }
+        }
+
         // Chốt dự đoán đang treo cho phiên này
         const pending = S.predLog.find(p => p.phien === latestPhien && p.actual === null);
         if (pending) {
@@ -281,7 +291,8 @@ app.get('/history/:gameId', (req, res) => {
     const gid = req.params.gameId;
     if (!STATE[gid]) return res.status(404).json({ error: 'Game not found' });
     const S = STATE[gid];
-    const completed = S.predLog.filter(p => p.actual !== null);
+    // SỬA: chỉ tính phiên thực sự được chốt (loại SKIPPED) khi tính độ chính xác
+    const completed = S.predLog.filter(p => p.actual !== null && p.actual !== 'SKIPPED');
     const correct = completed.filter(p => p.correct).length;
     const total = completed.length;
     const accuracy = total > 0 ? `${((correct / total) * 100).toFixed(1)}%` : '--';

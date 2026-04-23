@@ -361,6 +361,11 @@ async function fetchData() {
             document.getElementById('ai-conf').innerText = `CONFIDENCE ${pred.confidence}%`;
             document.getElementById('ai-conf').style.color = pred.confidence >= 85 ? '#0f0' : pred.confidence >= 75 ? '#00ffff' : '#f00';
 
+            // SỬA: reset đèn/chữ phía đối lập để không bị "kẹt sáng" khi đổi dự đoán
+            document.getElementById('lamp-tai').className = 'signal-lamp';
+            document.getElementById('lamp-xiu').className = 'signal-lamp';
+            document.getElementById('text-tai').className = 'signal-text-top';
+            document.getElementById('text-xiu').className = 'signal-text-top';
             document.getElementById(`lamp-${isTai?'tai':'xiu'}`).className = `signal-lamp active-${isTai?'tai':'xiu'}`;
             document.getElementById(`text-${isTai?'tai':'xiu'}`).className = `signal-text-top active-${isTai?'tai':'xiu'}-text`;
             document.getElementById('ai-center-box').className = `ai-logo-wrap center-blink-${isTai?'tai':'xiu'}`;
@@ -388,7 +393,7 @@ async function fetchData() {
                 </div>
                 <div style="background:rgba(0,255,255,0.05);border:1px solid rgba(0,255,255,0.3);border-radius:8px;padding:6px;text-align:center;margin-top:6px">
                     <div style="color:#aaa;font-size:10px;margin-bottom:2px">CHI TIẾT 3 SỐ XÁC SUẤT CAO NHẤT:</div>
-                    <div style="color:#ff00ff;font-weight:900;font-size:16px;text-shadow:0 0 15px #ff00ff;letter-spacing:3px">${getExpectedNums(pred.lastTotal, isTai)}</div>
+                    <div style="color:#ff00ff;font-weight:900;font-size:16px;text-shadow:0 0 15px #ff00ff;letter-spacing:3px">${(pred.expectedNumbers && pred.expectedNumbers.length ? pred.expectedNumbers.join(', ') : getExpectedNums(pred.lastTotal, isTai))}</div>
                 </div>`;
 
             // Cập nhật quản lý vốn theo confidence của phiên tới
